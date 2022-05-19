@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32228.343
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLECode", "Testing\BLECode.csproj", "{272BFBBD-04C7-4B78-AFA5-6D8D5058250C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{272BFBBD-04C7-4B78-AFA5-6D8D5058250C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{272BFBBD-04C7-4B78-AFA5-6D8D5058250C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{272BFBBD-04C7-4B78-AFA5-6D8D5058250C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{272BFBBD-04C7-4B78-AFA5-6D8D5058250C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {39718D55-4D6A-4558-A7ED-1D262AD4B0AE}
+	EndGlobalSection
+EndGlobal
