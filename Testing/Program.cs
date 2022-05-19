@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,7 +63,7 @@ namespace BLECode
 
 
             // Listing the characteristics of battery service
-            Console.WriteLine(">> Listing Characteristics");
+            PrintAndStall(">> Listing Characteristics", 2000);
 
             GattCharacteristicsResult characteristicResult = await _batteryService.GetCharacteristicsAsync();
 
@@ -108,6 +109,22 @@ namespace BLECode
 
             Console.WriteLine("Press any key to exit");
             Console.ReadKey();
+
+        }
+
+        private static void PrintAndStall(string msg, int pauseTimeInMS)
+        {
+            int nDots = 10;
+            int singlePause = pauseTimeInMS / nDots;
+
+            Console.Write(msg);
+
+            for (int count = 0; count <= nDots; count++)
+            {
+                Console.Write(".");
+                Thread.Sleep(singlePause);
+            }
+            Console.WriteLine();
 
         }
 
