@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
-using Windows.Storage.Streams;
 
-namespace BLECode
+namespace Testing
 {
+    
     class Program
     {
         // CLASS FIELDS
@@ -24,7 +21,7 @@ namespace BLECode
         // CLASS CONSTANTS
         private const string SearchStr = "Xsens DOT";
 
-        static async Task Main(string[] args)
+        static async Task Mais(string[] args)
         {
             // ----------------------------------------------------------
             //Console.WriteLine("Welcome to the BLE Test Connector! ");
@@ -45,25 +42,31 @@ namespace BLECode
             Console.WriteLine(">> Listing Services");
             GattDeviceServicesResult serviceResult = await bluetoothLeDevice.GetGattServicesAsync();
 
-            if (serviceResult.Status == GattCommunicationStatus.Success)
+            while (serviceResult.Status != GattCommunicationStatus.Success)
             {
-                var services = serviceResult.Services;
-                foreach (var service in services)
+                if (serviceResult.Status == GattCommunicationStatus.Success)
                 {
-                    Console.Write($"UUID: {service.Uuid}");
-                    if (service.Uuid.ToString().Equals("15173000-4947-11e9-8646-d663bd873d93"))
+                    var services = serviceResult.Services;
+                    foreach (var service in services)
                     {
-                        Console.Write(" <- Battery Service");
-                        _batteryService = service; // saving the service for later use
+                        Console.Write($"UUID: {service.Uuid}");
+                        if (service.Uuid.ToString().Equals("15173000-4947-11e9-8646-d663bd873d93")) // only works with the 7f DOT
+                        {
+                             Console.Write(" <- Battery Service");
+                            _batteryService = service; // saving the service for later use
+                        }
+                        Console.WriteLine();
                     }
                     Console.WriteLine();
                 }
-                Console.WriteLine();
             }
 
 
+
+
+
             // Listing the characteristics of battery service
-            PrintAndStall(">> Listing Characteristics", 2000);
+            Console.WriteLine("Listing Characteristics");
 
             GattCharacteristicsResult characteristicResult = await _batteryService.GetCharacteristicsAsync();
 
@@ -73,8 +76,10 @@ namespace BLECode
                 Console.WriteLine("List of characteristics associate with the battery service");
                 foreach (var characteristic in characteristics)
                 {
-                    Console.WriteLine($"UUID: {characteristic.Uuid}");
+                    Console.WriteLine($">>> UUID: {characteristic.Uuid}");
+
                     _batteryCharacteristic = characteristic;
+
                 }
             }
             Console.WriteLine();
@@ -91,8 +96,25 @@ namespace BLECode
 
             if (properties.HasFlag(GattCharacteristicProperties.Read))
             {
-
                 Console.WriteLine("Can be read");
+
+                // Read characteristic values :
+                GattReadResult result = await _batteryCharacteristic.ReadValueAsync(BluetoothCacheMode.Uncached);
+
+                if (result.Status == GattCommunicationStatus.Success)
+                {
+                    // Extract fields :
+                    String batteryLevel = result.Value.ToArray()[0].ToString();
+                    String chargingStatus = result.Value.ToArray()[1].ToString();
+
+                    Console.WriteLine($">>> Battery Lv: {batteryLevel}% : ChargingStatus: {chargingStatus}");
+                }
+                else
+                {
+                    Console.WriteLine($"NOPE");
+                }
+
+                
             }
 
             if (properties.HasFlag(GattCharacteristicProperties.Write))
@@ -112,21 +134,7 @@ namespace BLECode
 
         }
 
-        private static void PrintAndStall(string msg, int pauseTimeInMS)
-        {
-            int nDots = 10;
-            int singlePause = pauseTimeInMS / nDots;
 
-            Console.Write(msg);
-
-            for (int count = 0; count <= nDots; count++)
-            {
-                Console.Write(".");
-                Thread.Sleep(singlePause);
-            }
-            Console.WriteLine();
-
-        }
 
         private static void QueryDOT()
         {
@@ -153,12 +161,11 @@ namespace BLECode
 
             while (_device == null)
             {
-                Thread.Sleep(200);
+                //Thread.Sleep(200);
                 Console.WriteLine($"Searching for {SearchStr} products in the vicinity....");
             }
 
-
-            //deviceWatcher.Stop();
+            deviceWatcher.Stop();
         }
 
         private static void DeviceWatcher_Stopped(DeviceWatcher sender, object args)
@@ -184,9 +191,11 @@ namespace BLECode
         private static void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
         {
             //Console.WriteLine(args.Name);
-            if (args.Name.Equals(SearchStr))
+            if(args.Id.ToString().Equals("BluetoothLE#BluetoothLE98:43:fa:23:ef:41-d4:ca:6e:f1:82:7f"))
+                //if (args.Name.Equals(SearchStr))
             {
                 _device = args;
+                Console.WriteLine("The 7f Xsens DOT has been found");
 
                 if (!_deviceList.ContainsKey(args.Id))
                 {
@@ -195,4 +204,5 @@ namespace BLECode
             }
         }
     }
+    
 }
