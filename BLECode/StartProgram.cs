@@ -22,6 +22,7 @@ namespace BLECode
         {
             // Introductory Stuff
             Console.WriteLine("Running Xsens DOT Discovery Program - Assembly date 23/05/2022");
+            Console.WriteLine("BLE Discovery Code Stage");
             Console.WriteLine();
 
             // Discover
