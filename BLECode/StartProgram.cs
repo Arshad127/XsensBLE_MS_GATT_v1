@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Windows.Devices.Bluetooth;
+using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
 
 namespace BLECode
@@ -15,10 +18,13 @@ namespace BLECode
 
         private static ConcurrentDictionary<String, DeviceInformation> _uncoveredXsensDot = new ConcurrentDictionary<String, DeviceInformation>();
 
-        private const string SearchStr = "Xsens DOT";
+        private static ConcurrentDictionary<String, BluetoothLEDevice> _connectedBLEDevices = new ConcurrentDictionary<string, BluetoothLEDevice>();
+
+        private const string SensorNameStr = "Xsens DOT";
+        private const int NumSensorsExpected = 1;
 
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             // Introductory Stuff
             Console.WriteLine("Running Xsens DOT Discovery Program - Assembly date 23/05/2022");
@@ -45,8 +51,123 @@ namespace BLECode
             deviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
             deviceWatcher.Stopped += DeviceWatcher_Stopped;
 
-                // Start the watcher
+                // Discovery happening
+            new Thread(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+
+
+            }).Start();
+
             deviceWatcher.Start();
+            
+
+            while (_uncoveredXsensDot.Count() != NumSensorsExpected) // wait until all the sensors has been found
+            {
+                Thread.Sleep(700);
+                Console.WriteLine($"{_uncoveredXsensDot.Count()} of {NumSensorsExpected} {SensorNameStr} found");
+            }
+
+            deviceWatcher.Stop();
+
+
+            // Connection
+            Console.WriteLine(">> Attempting to connect to Xsens DOTs");
+
+            foreach (KeyValuePair<string, DeviceInformation> entry in _uncoveredXsensDot)
+            {
+                BluetoothLEDevice tempBluetoothLeDevice = await BluetoothLEDevice.FromIdAsync(entry.Value.Id);
+
+                if (tempBluetoothLeDevice != null)
+                {
+                    _connectedBLEDevices.TryAdd(entry.Key, tempBluetoothLeDevice);
+                    Console.WriteLine($">> Successful connection to {entry.Key}");
+                }
+                else
+                {
+                    Console.WriteLine($">> Connection to {entry.Key} failed");
+
+                }
+            }
+
+            // Listing the services
+            Console.WriteLine(">> Listing Services");
+
+            Console.WriteLine(">>>>>>> STEP 1");
+            BluetoothLEDevice bluetoothLeDevice = _connectedBLEDevices.Values.ElementAt(0);
+
+            Console.WriteLine(">>>>>>> STEP 2");
+
+            GattDeviceServicesResult serviceResult = await bluetoothLeDevice.GetGattServicesAsync();
+
+
+            if (serviceResult.Status == GattCommunicationStatus.Success)
+            {
+                Console.WriteLine("Service is a success");
+
+                var services = serviceResult.Services;
+                foreach (var service in services)
+                {
+                    Console.WriteLine($"UUID: {service.Uuid}");
+                }
+
+            }
+            else
+            {
+                Console.WriteLine("Service listing has failed");
+            }
+
+            // We are stalling until we get our list
+
+            Console.WriteLine(">>>>>>> STEP 3");
+
+            while (serviceResult.Status != GattCommunicationStatus.Success)
+            {
+                Console.WriteLine(">>>>>>> STEP 4");
+
+                while (serviceResult.Services.Count < 1)
+                {
+                    Console.WriteLine(">>>>>>> STEP 5");
+
+                    Console.WriteLine("Grabbing the list");
+                    Thread.Sleep(300);
+                }
+            }
+
+            Console.WriteLine(">>>>>>> STEP 6");
+
+            while (serviceResult.Status != GattCommunicationStatus.Success)
+            {
+                Console.WriteLine("I'm success");
+                if (serviceResult.Status == GattCommunicationStatus.Success)
+                {
+                    var services = serviceResult.Services;
+                    foreach (var service in services)
+                    {
+                        Console.WriteLine($"UUID: {service.Uuid}");
+                        Console.WriteLine(">>>>>>> STEP 7");
+                        
+                        if (service.Uuid.ToString().Equals("15173000-4947-11e9-8646-d663bd873d93")) // only works with the 7f DOT
+                        {
+                            Console.Write(" <- Battery Service");
+                            //_batteryService = service; // saving the service for later use
+                        }
+                        Console.WriteLine();
+                        
+                    }
+                    Console.WriteLine();
+                }
+                else
+                {
+                    Console.WriteLine(">> Listing Services Failed");
+                }
+            }
+
+            
+
+
+            // Start the watcher
+            //deviceWatcher.Start();
 
             // List the Xsens found
 
@@ -88,10 +209,10 @@ namespace BLECode
 
                 Console.Write($"-> Name: {args.Name}, ID: {args.Id}, IsEnabled: {args.IsEnabled}");
 
-                if (args.Name.Equals(SearchStr))
+                if (args.Name.Equals(SensorNameStr))
                 {
                     _uncoveredXsensDot.TryAdd(args.Id, args);
-                    Console.WriteLine("<-- Xsens Dot");
+                    Console.WriteLine("<-- Xsens DOT");
                 }
                 else
                 {
