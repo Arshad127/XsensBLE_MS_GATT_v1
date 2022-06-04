@@ -113,8 +113,6 @@ namespace Testing
                 {
                     Console.WriteLine($"NOPE");
                 }
-
-                
             }
 
             if (properties.HasFlag(GattCharacteristicProperties.Write))
