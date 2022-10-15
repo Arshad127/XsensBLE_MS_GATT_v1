@@ -189,6 +189,55 @@ namespace BLECode
         }
 
 
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // DESCRIPTION : Read "battery" Characteristics (TEST)
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        private static async Task readAllXSENS_BatteryData(ConcurrentDictionary<String, BluetoothLEDevice> BLEDevicesList)
+        {
+            // Listing the battery details
+            Printer.Cyan(">> Listing the battery status of the IMUs");
+
+            int count = 1;
+
+            foreach (KeyValuePair<string, BluetoothLEDevice> entry in BLEDevicesList)
+            {
+                Printer.Magenta($">>> IMU {count} | {_uncoveredXsensDot[entry.Key].Id}");
+
+
+                // Get list of services :
+                GattDeviceServicesResult XSENS_ServicesList = await entry.Value.GetGattServicesAsync();
+
+                // Get the battery service :
+                GattDeviceService XSENS_BatteryService = getXSENS_Service(XSENS_ServicesList, "15173000-4947-11e9-8646-d663bd873d93");
+
+
+                // Get list of characteristics :
+                GattCharacteristicsResult XSENS_characteristicsList = await XSENS_BatteryService.GetCharacteristicsAsync();
+
+                // Get the battery service characteristic :
+                GattCharacteristic XSENS_BatteryCharacteristic = getXSENS_Characteristic(XSENS_characteristicsList, "15173001-4947-11e9-8646-d663bd873d93");
+
+
+                // Get list of results :
+                GattReadResult XSENS_DataStruct = await XSENS_BatteryCharacteristic.ReadValueAsync(BluetoothCacheMode.Uncached);
+
+                // Get the data structure :
+                byte[] dataStruct = getXSENS_DataArray(XSENS_DataStruct);
+                Printer.White($"  Received Byte Array : {dataStruct.Length}-bytes \n  " + String.Join(" ", dataStruct) + "\n");
+
+
+
+                // Extract fields :
+                Printer.White($"\t Battery Lv       : {dataStruct[0].ToString()}%");
+                Printer.White($"\t ChargingStatus   : {dataStruct[1].ToString()}");
+                Printer.White($"\n");
+
+                count++;
+            }
+        }
+
+
+
 
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // DESCRIPTION : Stream Data (TEST)
@@ -521,53 +570,7 @@ namespace BLECode
         }
 
 
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // DESCRIPTION : Read "battery" Characteristics (TEST)
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        private static async Task readAllXSENS_BatteryData(ConcurrentDictionary<String, BluetoothLEDevice> BLEDevicesList)
-        {
-            // Listing the battery details
-            Printer.Cyan(">> Listing the battery status of the IMUs");
-
-            int count = 1;
-
-            foreach (KeyValuePair<string, BluetoothLEDevice> entry in BLEDevicesList)
-            {
-                Printer.Magenta($">>> IMU {count} | {_uncoveredXsensDot[entry.Key].Id}");
-
-
-                // Get list of services :
-                GattDeviceServicesResult XSENS_ServicesList = await entry.Value.GetGattServicesAsync();
-
-                // Get the battery service :
-                GattDeviceService XSENS_BatteryService = getXSENS_Service(XSENS_ServicesList, "15173000-4947-11e9-8646-d663bd873d93");
-
-
-                // Get list of characteristics :
-                GattCharacteristicsResult XSENS_characteristicsList = await XSENS_BatteryService.GetCharacteristicsAsync();
-
-                // Get the battery service characteristic :
-                GattCharacteristic XSENS_BatteryCharacteristic = getXSENS_Characteristic(XSENS_characteristicsList, "15173001-4947-11e9-8646-d663bd873d93");
-
-
-                // Get list of results :
-                GattReadResult XSENS_DataStruct = await XSENS_BatteryCharacteristic.ReadValueAsync(BluetoothCacheMode.Uncached);
-
-                // Get the data structure :
-                byte[] dataStruct = getXSENS_DataArray(XSENS_DataStruct);
-                Printer.White($"  Received Byte Array : {dataStruct.Length}-bytes \n  " + String.Join(" ", dataStruct) + "\n");
-
-
-
-                // Extract fields :
-                Printer.White($"\t Battery Lv       : {dataStruct[0].ToString()}%");
-                Printer.White($"\t ChargingStatus   : {dataStruct[1].ToString()}");
-                Printer.White($"\n");
-
-                count++;
-            }
-        }
-
+       
 
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // DESCRIPTION : Write Test (Identifying XSENS)
@@ -736,7 +739,7 @@ namespace BLECode
             }
             else
             {
-                Printer.Red("Accessing Characteristice Denied, GattCharacteristicsResult unsuccessful!");
+                Printer.Red("Accessing Characteristic Denied, GattCharacteristicsResult unsuccessful!");
             }
 
             return foundCharacteristic;
